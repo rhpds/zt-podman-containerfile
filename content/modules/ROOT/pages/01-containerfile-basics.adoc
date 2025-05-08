@@ -1,0 +1,104 @@
+== What is a Containerfile
+
+A `+Containerfile+` is a set of commands, almost like a script, that
+tells podman how to build your container image. It defines things like
+what container image to base your new image on using the `+FROM+`
+command. You also can `+RUN+` arbitrary commands, or `+COPY+` in files.
+Finally what `+CMD+` to run as the main process of the container.
+
+In this exercise, we’re going to build a basic container image, and then
+use it as a base for some other changes.
+
+== A basic containerfile
+
+We’ve staged a base `+Containerfile+` for you to start with.
+
+[source,bash,run]
+----
+cd ~/my-container
+----
+
+Have a look at the `+Containerfile+` in this directory.
+
+[source,bash,run]
+----
+cat Containerfile
+----
+
+This `+Containerfile+` will start with a base RHEL 9 universal base
+image, and then add in Apache HTTPD. Then we tell the image what port it
+should open, and finally we run httpd in the foreground.
+
+Each command in this file will start a new layer in the container
+image’s layered filesystem. Every time you make a change, and rebuild
+the image, podman will pick up the build from the first change. So let’s
+build this image.
+
+When you build from a `+Containerfile+`, you need to tell podman what to
+tag the new image as, this is how you’ll use the image later, and where
+the `+Containerfile+` is. We’ll build from the working directory where
+the `+Containerfile+` exists, but you can also point do the
+`+Containerfile+` from a different directory.
+
+First, make sure you’re still in the `+my-container+` directory.
+
+[source,bash,run]
+----
+cd ~/my-container
+----
+
+Now build the container with.
+
+[source,bash,run]
+----
+podman build -t my-container .
+----
+
+You should see the output run through all of the commands we entered
+into the `+Containerfile+`. Once it’s complete, you should see an output
+similar to this:
+
+Now, if we check our local images, we should see my-container
+
+[source,bash,run]
+----
+podman image list
+----
+
+____
+NOTE: You will also see the image that you based your container on.
+____
+
+Now we can run a container from our image!
+
+[source,bash,run]
+----
+podman run --name my-httpd -p 80:80 -d my-container
+----
+
+Now, if you check running containers, you should see your container, and
+you can view its log output with `+podman logs+`.
+
+[source,bash,run]
+----
+podman ps
+----
+
+[source,bash,run]
+----
+podman logs my-httpd
+----
+
+And that should show you the foreground output of httpd.
+
+You should also be able to test your container with curl.
+
+[source,bash,run]
+----
+curl http://127.0.0.1
+----
+
+This should result in the apache test page.
+
+Now that we’ve built a container, let’s make a change to the
+`+Containerfile+` and rebuild it.

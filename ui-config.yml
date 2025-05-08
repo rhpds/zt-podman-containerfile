@@ -1,0 +1,18 @@
+---
+antora:
+  name: modules
+  dir: www
+  modules:
+    - name: "01-containerfile-basics"
+      label: "Containerfile Basics"
+      solveButton: true
+    - name: "02-modify-image"
+      label: "Modify Image"
+      solveButton: true
+    - name: "03-running-init"
+      label: "Running Init"
+      solveButton: true
+
+tabs:
+  - name: ">_ terminal"
+    url: /wetty
