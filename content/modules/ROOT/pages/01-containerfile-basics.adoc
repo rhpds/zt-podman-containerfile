@@ -40,15 +40,6 @@ the `+Containerfile+` is. We’ll build from the working directory where
 the `+Containerfile+` exists, but you can also point do the
 `+Containerfile+` from a different directory.
 
-First, make sure you’re still in the `+my-container+` directory.
-
-[source,bash,run]
-----
-cd ~/my-container
-----
-
-Now build the container with.
-
 [source,bash,run]
 ----
 podman build -t my-container .
@@ -73,7 +64,7 @@ Now we can run a container from our image!
 
 [source,bash,run]
 ----
-podman run --name my-httpd -p 80:80 -d my-container
+podman run --name my-httpd -p 8080:80 -d my-container
 ----
 
 Now, if you check running containers, you should see your container, and
@@ -95,7 +86,7 @@ You should also be able to test your container with curl.
 
 [source,bash,run]
 ----
-curl http://127.0.0.1
+curl http://127.0.0.1:8080
 ----
 
 This should result in the apache test page.

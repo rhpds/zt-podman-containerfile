@@ -1,22 +1,25 @@
-!#/bin/bash
+#!/bin/bash
+# Modify to run as root but create artifacts as rhel
 
-# Pull the UBI image to avoid during lab time
+sudo -i -u rhel <<'EORHEL' 
+
+# Pull the images ahead of time
 podman pull registry.access.redhat.com/ubi10/ubi
+podman pull registry.access.redhat.com/ubi10/ubi-init
 
-# Create the example containerfile
-mkdir -p ~/my-container/
-cat << EOF >> ~/my-container/Containerfile
+# Create the starting containerfile
+mkdir -p /home/rhel/my-container/
+cat << EOF >> /home/rhel/my-container/Containerfile
 FROM registry.access.redhat.com/ubi10/ubi
 RUN dnf -y install httpd
 EXPOSE 80
 CMD ["/usr/sbin/httpd","-DFOREGROUND"]
 EOF
 
-# Create the index.html
 # moved from step 2 setup script
-
-mkdir -p ~/my-container/app
-cat << EOF >> ~/my-container/app/index.html
+# Create the index.html
+mkdir -p /home/rhel/my-container/app
+cat << EOF >> /home/rhel/my-container/app/index.html
 <HTML>
 <HEAD>
 <TITLE>My Web App</TITLE>
@@ -24,3 +27,8 @@ cat << EOF >> ~/my-container/app/index.html
 This is my web app
 </HTML>
 EOF
+
+EORHEL
+
+# Make sure we have the right ownership as a backstop
+chown -R rhel:rhel /home/rhel

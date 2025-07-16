@@ -52,18 +52,18 @@ do not necessarily have to remove it though, we do here because we are
 re-using the same container name. If instead we wanted to run the
 container with a new name, we could have stopped `+my-httpd+` and then
 started a new container with a new name. If we didn’t stop the old
-container, we would not be able to start the new container on port 80.
+container, we would not be able to start the new container on port 8080.
 
 [source,bash,run]
 ----
-podman run -d -p 80:80 --name my-httpd my-container
+podman run -d -p 8080:80 --name my-httpd my-container
 ----
 
 With the new container running, we can test it with curl.
 
 [source,bash,run]
 ----
-curl http://127.0.0.1
+curl http://127.0.0.1:8080
 ----
 
 How, instead of the stock "`It Worked`" apache page, you should get the

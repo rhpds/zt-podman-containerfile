@@ -21,34 +21,38 @@ vi Containerfile
 First we need to change the `+FROM+` line
 to:
 
-....
+[source,dockerfile]
+----
 FROM registry.access.redhat.com/ubi10/ubi-init
-....
+----
 
 Now, we also need to enable the httpd service within systemd. So,
 somewhere after httpd is installed, but before the `+CMD+` you should
 add the following:
 
-....
+[source,dockerfile]
+----
 RUN systemctl enable httpd
-....
+----
 
 In our example we add this as the last line before `+CMD+`.
 
 The last change we need to make is the `+CMD+` itself. 
 Change `+CMD+` to:
 
-....
+[source,dockerfile]
+----
 CMD ["/sbin/init"]
-....
+----
 
 Your `+Containerfile+` should now look like this:
 [source,dockerfile]
 ----
 FROM registry.access.redhat.com/ubi10/ubi-init # <1>
 RUN dnf -y install httpd
-
 EXPOSE 80
+
+COPY app/index.html /var/www/html
 
 RUN systemctl enable httpd # <2>
 CMD ["/sbin/init"] # <3>
@@ -81,7 +85,7 @@ container with the new image.
 
 [source,bash,run]
 ----
-podman run -d -p 80:80 --name my-httpd-init my-container:init
+podman run -d -p 8080:80 --name my-httpd-init my-container:init
 ----
 
 Now, you should once again be able to connect to your container with
@@ -89,9 +93,34 @@ curl.
 
 [source,bash,run]
 ----
-curl http://127.0.0.1
+curl http://127.0.0.1:8080
 ----
 
 If you didn't stop the earlier container, you may get an error since 
 we're reusing the same exposed port. Be sure to stop the `my-httpd`
 container and try the `podman run` command again.
+
+Now, if you check running containers, you should see your container, and
+the new command executed as `/sbin/init`. Since `httpd` is being started 
+directly when the container starts, you won't see the same output via `podman logs`.
+
+[source,bash,run]
+----
+podman ps
+----
+
+[source,bash,run]
+----
+podman logs my-httpd-init
+----
+
+Instead, you can use `podman` to execute `journalctl` inside the running 
+container to see the output of the logs as you would on any other 
+`systemd` based environment.
+
+[source,bash,run]
+----
+podman exec -it my-httpd-init journalctl -u httpd
+----
+
+
