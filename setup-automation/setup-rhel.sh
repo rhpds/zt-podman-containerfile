@@ -1,47 +1,34 @@
-!#/bin/bash
-LOG=/dev/null
+#!/bin/bash
+# Modify to run as root but create artifacts as rhel
 
-while [ ! -f /opt/instruqt/bootstrap/host-bootstrap-completed ]
-do
-   echo "Waiting for Instruqt to finish booting the VM"
-   sleep 1
-done
+sudo -i -u rhel <<'EORHEL' 
 
-yum remove -y google-rhui-client-rhel8.noarch
-yum clean all
-subscription-manager config --rhsm.manage_repos=1
-subscription-manager register --activationkey=${ACTIVATION_KEY} --org=12451665 --force
+# Pull the images ahead of time
+podman pull registry.access.redhat.com/ubi10/ubi
+podman pull registry.access.redhat.com/ubi10/ubi-init
 
-touch $LOG
-
-echo "Installing Podman" >> $LOG
-dnf -y install container-tools
-podman pull registry.access.redhat.com/ubi9/ubi
-mkdir -p ~root/my-container/
-cat << EOF >> ~root/my-container/Containerfile
-FROM registry.access.redhat.com/ubi9/ubi
+# Create the starting containerfile
+mkdir -p /home/rhel/my-container/
+cat << EOF >> /home/rhel/my-container/Containerfile
+FROM registry.access.redhat.com/ubi10/ubi
 RUN dnf -y install httpd
 EXPOSE 80
 CMD ["/usr/sbin/httpd","-DFOREGROUND"]
 EOF
 
+# moved from step 2 setup script
+# Create the index.html
+mkdir -p /home/rhel/my-container/app
+cat << EOF >> /home/rhel/my-container/app/index.html
+<HTML>
+<HEAD>
+<TITLE>My Web App</TITLE>
+</HEAD>
+This is my web app
+</HTML>
+EOF
 
-#Create a done file to signal we have finished
-touch ${LOG}.done
-n=1
-GREEN='\033[0;32m' 
-NC='\033[0m' # No Color
+EORHEL
 
-while [ ! -f ${LOG}.done ] ;
-do
-      if test "$n" = "1"
-      then
-	    clear
-            n=$(( n+1 ))	 # increments $n
-      else
-	    printf "."
-      fi
-      sleep 2
-done
-clear
-echo -e "${GREEN}Ready to start your scenario${NC}"
+# Make sure we have the right ownership as a backstop
+chown -R rhel:rhel /home/rhel

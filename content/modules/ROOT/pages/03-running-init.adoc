@@ -9,41 +9,57 @@ could lead to data corruption if the foreground process does not exit
 properly when the container exits. If you would like to run a container
 using init, this might be a helpful example for you.
 
-First, let’s Switch back over to the link:tab-1[button
-label="`Containerfile`" background="`#ee0000`" color="`#c7c7c7`"] tab,
-and open up the `+Containerfile+`.
+The RHEL UBI base image that we’ve been using has an alternate build
+that supports a stripped down `systemd`. You can use it simply by
+modifying a few lines in the Containerfile.
 
-The RHEL UBI base image that we’ve been using, has an alternate build
-that supports a stripped down systemd init. You can use it simply by
-following a few basic steps. First we need to change the `+FROM+` line
+[source,bash,run]
+----
+vi Containerfile
+----
+
+First we need to change the `+FROM+` line
 to:
 
-....
-FROM registry.access.redhat.com/ubi9/ubi-init
-....
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/ubi10/ubi-init
+----
 
 Now, we also need to enable the httpd service within systemd. So,
 somewhere after httpd is installed, but before the `+CMD+` you should
 add the following:
 
-....
+[source,dockerfile]
+----
 RUN systemctl enable httpd
-....
+----
 
 In our example we add this as the last line before `+CMD+`.
 
-The last change we need to make is the `+CMD+` itself. Change `+CMD+` to
-:
+The last change we need to make is the `+CMD+` itself. 
+Change `+CMD+` to:
 
-....
+[source,dockerfile]
+----
 CMD ["/sbin/init"]
-....
+----
 
 Your `+Containerfile+` should now look like this:
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/ubi10/ubi-init # <1>
+RUN dnf -y install httpd
+EXPOSE 80
 
-Switch back to the link:tab-0[button label="`Terminal`"
-background="`#ee0000`" color="`#c7c7c7`"] tab, so we can continue with
-the container image build.
+COPY app/index.html /var/www/html
+
+RUN systemctl enable httpd # <2>
+CMD ["/sbin/init"] # <3>
+----
+<1> Systemd enabled UBI image
+<2> Set httpd to start at runtime
+<3> Change start command to call systemd instead of httpd
 
 Now let’s build our new container image. But maybe we’re building this
 as an alternative to the standard `+my-container+`, or perhaps we’re
@@ -52,7 +68,6 @@ this build a descriptive tag.
 
 [source,bash,run]
 ----
-cd ~/my-container
 podman build -t my-container:init .
 ----
 
@@ -66,13 +81,11 @@ podman image list
 
 Notice that there are now two images named `+localhost/my-container+`,
 but they have different tags, init, and latest. Let’s run a new
-container with the new image. Again, we’ll need to be sure that our old
-container is stopped first.
+container with the new image. 
 
 [source,bash,run]
 ----
-podman stop my-httpd
-podman run -d -p 80:80 --name my-httpd-init my-container:init
+podman run -d -p 8080:80 --name my-httpd-init my-container:init
 ----
 
 Now, you should once again be able to connect to your container with
@@ -80,5 +93,37 @@ curl.
 
 [source,bash,run]
 ----
-curl http://127.0.0.1
+curl http://127.0.0.1:8080
 ----
+
+If you didn't stop the earlier container, you may get an error since 
+we're reusing the same exposed port. Be sure to stop the `my-httpd`
+container and try the `podman run` command again.
+
+Now, if you check running containers, you should see your container, and
+the new command executed as `/sbin/init`. Since `httpd` isn't being started 
+directly when the container starts, you won't see the same foreground 
+output via `podman logs`.
+
+[source,bash,run]
+----
+podman ps
+----
+
+[source,bash,run]
+----
+podman logs my-httpd-init
+----
+
+Instead, you can use `podman` to execute `journalctl` inside the running 
+container to see the output of the logs as you would on any other 
+`systemd` based environment.
+
+[source,bash,run]
+----
+podman exec -it my-httpd-init journalctl -u httpd
+----
+
+You now have an understanding of not only how to build containers running 
+simple services, but also how to use `systemd` to control services that 
+expect a full init environment to operate.

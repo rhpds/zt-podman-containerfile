@@ -25,8 +25,8 @@ Have a look at the `+Containerfile+` in this directory.
 cat Containerfile
 ----
 
-This `+Containerfile+` will start with a base RHEL 9 universal base
-image, and then add in Apache HTTPD. Then we tell the image what port it
+This `+Containerfile+` will start with a base RHEL 10 Universal Base
+Image, and then add in Apache HTTPD. Then we tell the image what port it
 should open, and finally we run httpd in the foreground.
 
 Each command in this file will start a new layer in the container
@@ -39,15 +39,6 @@ tag the new image as, this is how you’ll use the image later, and where
 the `+Containerfile+` is. We’ll build from the working directory where
 the `+Containerfile+` exists, but you can also point do the
 `+Containerfile+` from a different directory.
-
-First, make sure you’re still in the `+my-container+` directory.
-
-[source,bash,run]
-----
-cd ~/my-container
-----
-
-Now build the container with.
 
 [source,bash,run]
 ----
@@ -73,7 +64,7 @@ Now we can run a container from our image!
 
 [source,bash,run]
 ----
-podman run --name my-httpd -p 80:80 -d my-container
+podman run --name my-httpd -p 8080:80 -d my-container
 ----
 
 Now, if you check running containers, you should see your container, and
@@ -95,7 +86,7 @@ You should also be able to test your container with curl.
 
 [source,bash,run]
 ----
-curl http://127.0.0.1
+curl http://127.0.0.1:8080
 ----
 
 This should result in the apache test page.

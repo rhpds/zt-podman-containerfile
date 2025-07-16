@@ -2,28 +2,32 @@ In this step, we’re going to make a simple change to our
 `+Containerfile+` and re-build our image.
 
 == Modifying a Containerfile
-
-At the top of the lab environment, you should see a new tab, called
-Containerfile. If you click on that tab, you will see the contents of
-our Containerfile in an online editor.
-
-Let’s Switch to the link:tab-1[button label="`Containerfile`"
-background="`#ee0000`" color="`#c7c7c7`"] tab, and open up the
-`+Containerfile+`.
-
-After the line `+EXPOSE 80+` add the following command
-
-....
-COPY app/index.html /var/www/html
-....
-
-Now, switch back to the link:tab-0[button label="`Terminal`"
-background="`#ee0000`" color="`#c7c7c7`"] tab, and let’s re-build our
-image.
+Right now Apache serves it's default test page, let's add a new 
+index.html. A new index has been prepared in the `app` directory, let's 
+see what the new page should look like.
 
 [source,bash,run]
 ----
-cd ~/my-container
+cat app/index.html
+----
+
+Open the `Containerfile` in an editor
+
+[source,bash,run]
+----
+vi Containerfile
+----
+
+After the line `+EXPOSE 80+` add the following command:
+[source,dockerfile]
+----
+COPY app/index.html /var/www/html
+----
+
+Now we can re-build our image.
+
+[source,bash,run]
+----
 podman build -t my-container .
 ----
 
@@ -48,18 +52,18 @@ do not necessarily have to remove it though, we do here because we are
 re-using the same container name. If instead we wanted to run the
 container with a new name, we could have stopped `+my-httpd+` and then
 started a new container with a new name. If we didn’t stop the old
-container, we would not be able to start the new container on port 80.
+container, we would not be able to start the new container on port 8080.
 
 [source,bash,run]
 ----
-podman run -d -p 80:80 --name my-httpd my-container
+podman run -d -p 8080:80 --name my-httpd my-container
 ----
 
 With the new container running, we can test it with curl.
 
 [source,bash,run]
 ----
-curl http://127.0.0.1
+curl http://127.0.0.1:8080
 ----
 
 How, instead of the stock "`It Worked`" apache page, you should get the
