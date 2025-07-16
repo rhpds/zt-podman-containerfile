@@ -11,14 +11,14 @@ see what the new page should look like.
 cat app/index.html
 ----
 
-Open the `Containerfile` in an editor and after the line `+EXPOSE 80+` 
-add the following command:
+Open the `Containerfile` in an editor
 
 [source,bash,run]
 ----
 vi Containerfile
 ----
 
+After the line `+EXPOSE 80+` add the following command:
 [source,dockerfile]
 ----
 COPY app/index.html /var/www/html
