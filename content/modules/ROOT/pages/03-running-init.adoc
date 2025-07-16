@@ -101,8 +101,9 @@ we're reusing the same exposed port. Be sure to stop the `my-httpd`
 container and try the `podman run` command again.
 
 Now, if you check running containers, you should see your container, and
-the new command executed as `/sbin/init`. Since `httpd` is being started 
-directly when the container starts, you won't see the same output via `podman logs`.
+the new command executed as `/sbin/init`. Since `httpd` isn't being started 
+directly when the container starts, you won't see the same foreground 
+output via `podman logs`.
 
 [source,bash,run]
 ----
@@ -123,4 +124,6 @@ container to see the output of the logs as you would on any other
 podman exec -it my-httpd-init journalctl -u httpd
 ----
 
-
+You now have an understanding of not only how to build containers running 
+simple services, but also how to use `systemd` to control services that 
+expect a full init environment to operate.
