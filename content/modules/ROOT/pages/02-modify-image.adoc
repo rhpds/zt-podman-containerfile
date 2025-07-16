@@ -2,28 +2,32 @@ In this step, we’re going to make a simple change to our
 `+Containerfile+` and re-build our image.
 
 == Modifying a Containerfile
-
-At the top of the lab environment, you should see a new tab, called
-Containerfile. If you click on that tab, you will see the contents of
-our Containerfile in an online editor.
-
-Let’s Switch to the link:tab-1[button label="`Containerfile`"
-background="`#ee0000`" color="`#c7c7c7`"] tab, and open up the
-`+Containerfile+`.
-
-After the line `+EXPOSE 80+` add the following command
-
-....
-COPY app/index.html /var/www/html
-....
-
-Now, switch back to the link:tab-0[button label="`Terminal`"
-background="`#ee0000`" color="`#c7c7c7`"] tab, and let’s re-build our
-image.
+Right now Apache serves it's default test page, let's add a new 
+index.html. A new index has been prepared in the `app` directory, let's 
+see what the new page should look like.
 
 [source,bash,run]
 ----
-cd ~/my-container
+cat app/index.html
+----
+
+Open the `Containerfile` in an editor and after the line `+EXPOSE 80+` 
+add the following command:
+
+[source,bash,run]
+----
+vi Containerfile
+----
+
+[source,dockerfile]
+----
+COPY app/index.html /var/www/html
+----
+
+Now we can re-build our image.
+
+[source,bash,run]
+----
 podman build -t my-container .
 ----
 

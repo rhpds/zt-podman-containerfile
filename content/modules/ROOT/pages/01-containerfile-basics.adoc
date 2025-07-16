@@ -25,8 +25,8 @@ Have a look at the `+Containerfile+` in this directory.
 cat Containerfile
 ----
 
-This `+Containerfile+` will start with a base RHEL 9 universal base
-image, and then add in Apache HTTPD. Then we tell the image what port it
+This `+Containerfile+` will start with a base RHEL 10 Universal Base
+Image, and then add in Apache HTTPD. Then we tell the image what port it
 should open, and finally we run httpd in the foreground.
 
 Each command in this file will start a new layer in the container
