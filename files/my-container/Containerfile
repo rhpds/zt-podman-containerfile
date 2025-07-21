@@ -1,0 +1,4 @@
+FROM registry.access.redhat.com/ubi10/ubi
+RUN dnf -y install httpd
+EXPOSE 80
+CMD ["/usr/sbin/httpd","-DFOREGROUND"]
