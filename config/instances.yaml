@@ -11,3 +11,5 @@ virtualmachines:
         value: "bastions"
     networks:
       - default
+    packages:
+      - git
