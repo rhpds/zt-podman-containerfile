@@ -4,8 +4,10 @@
 podman pull registry.access.redhat.com/ubi10/ubi
 podman pull registry.access.redhat.com/ubi10/ubi-init
 
+# Clone the files directory, copy the contents, then remove the git repo
 git clone --single-branch --branch clone_examples https://github.com/rhpds/zt-podman-containerfile.git /tmp/clone
 cp -r /tmp/clone/files/* ~/
+rm -rf /tmp/clone/
 
 # Create the starting containerfile
 #mkdir -p ~/my-container/
