@@ -4,9 +4,8 @@
 podman pull registry.access.redhat.com/ubi10/ubi
 podman pull registry.access.redhat.com/ubi10/ubi-init
 
-git clone --single-branch --branch clone_examples https://github.com/rhpds/zt-podman-containerfile.git /tmp
-cp -r /tmp/zt-podman-containerfile/files /home/rhel
-chown rhel:rhel /home/rhel/*
+git clone --single-branch --branch clone_examples https://github.com/rhpds/zt-podman-containerfile.git /tmp/clone
+cp -r /tmp/clone/files/* ~/
 
 # Create the starting containerfile
 #mkdir -p ~/my-container/
