@@ -68,14 +68,6 @@
       var: r_result
     when: r_result is defined
 
-  - name: Copy script file
-    when: r_script_test.stat.exists
-    copy:
-      src: ./files
-      dest: /home/rhel/
-    owner: rhel
-    mode: 0644
-
   - name: Fail if stage was failed
     ansible.builtin.fail:
       msg: "Setup failed"
