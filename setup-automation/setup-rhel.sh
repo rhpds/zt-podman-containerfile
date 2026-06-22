@@ -1,6 +1,10 @@
 #!/bin/bash
 
 # Pull the images ahead of time
+# Unregister and register the VM
+subscription-manager clean
+subscription-manager register --activationkey=12-5-22-instruqt --org=12451665 --force
+
 podman pull registry.access.redhat.com/ubi10/ubi
 podman pull registry.access.redhat.com/ubi10/ubi-init
 
