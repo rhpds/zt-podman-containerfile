@@ -1,8 +1,9 @@
 #!/bin/bash
 
 # Unregister and register the VM
+dnf -y remove katello-ca-consumer-*
 subscription-manager clean
-subscription-manager register --activationkey=12-5-22-instruqt --org=12451665 --force
+subscription-manager register --activationkey=$ACTIVATION_KEY --org=$ORG_ID --force
 
 # Pull the images ahead of time
 podman pull registry.access.redhat.com/ubi10/ubi
