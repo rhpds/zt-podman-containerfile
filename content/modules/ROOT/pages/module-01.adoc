@@ -82,14 +82,50 @@ Watch the output while it runs:
 [source,text]
 ----
 STEP 1/4: FROM registry.access.redhat.com/ubi10/ubi
-...
+Trying to pull registry.access.redhat.com/ubi10/ubi:latest...
+Getting image source signatures
+Checking if image destination supports signatures
+Copying blob 465cdc61d8a0 done   | 
+Copying config b2575cd882 done   | 
+Writing manifest to image destination
+Storing signatures
 STEP 2/4: RUN dnf -y install httpd
-...
-(placeholder — full build output, captured live)
-...
+Updating Subscription Management repositories.
+subscription-manager is operating in container mode.
+Red Hat Enterprise Linux 10 for x86_64 - AppStr 7.6 MB/s | 4.3 MB     00:00    
+Red Hat Enterprise Linux 10 for x86_64 - BaseOS  40 MB/s |  47 MB     00:01    
+Red Hat Universal Base Image 10 (RPMs) - BaseOS 2.8 MB/s | 181 kB     00:00    
+Red Hat Universal Base Image 10 (RPMs) - AppStr 7.6 MB/s | 420 kB     00:00    
+Red Hat Universal Base Image 10 (RPMs) - CodeRe 872 kB/s |  27 kB     00:00    
+Dependencies resolved.
+
+[ .OUTPUT TRIMMED. ]
+
+Installed:
+  apr-1.7.5-3.el10.x86_64                                                       
+  apr-util-1.6.3-23.el10_2.1.x86_64                                             
+  apr-util-lmdb-1.6.3-23.el10_2.1.x86_64                                        
+  apr-util-openssl-1.6.3-23.el10_2.1.x86_64                                     
+  httpd-2.4.63-13.el10_2.8.x86_64                                               
+  httpd-core-2.4.63-13.el10_2.8.x86_64                                          
+  httpd-filesystem-2.4.63-13.el10_2.8.noarch                                    
+  httpd-tools-2.4.63-13.el10_2.8.x86_64                                         
+  libbrotli-1.1.0-8.el10_2.1.x86_64                                             
+  lmdb-libs-0.9.32-4.el10.x86_64                                                
+  mailcap-2.1.54-8.el10.noarch                                                  
+  mod_http2-2.0.29-5.el10_3.1.x86_64                                            
+  mod_lua-2.4.63-13.el10_2.8.x86_64                                             
+  redhat-logos-httpd-100.3-2.el10.noarch                                        
+
+Complete!
+--> e40e2c60c20d
+STEP 3/4: EXPOSE 80
+--> 79332b9177fc
 STEP 4/4: CMD ["/usr/sbin/httpd","-DFOREGROUND"]
 COMMIT my-webserver
-...
+--> 0ae6d19aa5a9
+Successfully tagged localhost/my-webserver:latest
+0ae6d19aa5a98a5305cf0a1d35464f16b443272a3393721c70d2fad83455703e
 ----
 
 Each instruction executes as a numbered step in the order they are written.
@@ -97,9 +133,13 @@ Images are built in layers, the result of each step serves as the base for the n
 The `STEP` shows the line in the `Containerfile` that's being executed, and what follows is the resulting output.
 
 Also notice that at the end of each step is a hash.
+....
+--> e40e2c60c20d
+....
+
 This isn't a random output, but the actual ID of the image created by that step.
 Each layer is a real, complete container image that gets cached. 
-The `COMMIT` line is where the final image is created and the name and tag get applied.
+The `COMMIT` line is where the final image is created and the name and tag get applied after.
 
 == Examine what you built
 
@@ -114,19 +154,19 @@ podman run -d --name my-httpd -p 8080:80 my-webserver
 `--name` gives us a known value for our container's name, otherwise it will get an auto-generated one.
 `-p 8080:80` publishes the container's port 80 on host port 8080, so this works as a normal user.
 
-To test it, we can use `curl`:
+Without any changes, it will serve the standard test page.
+We can use `curl` to look for the title in the HTML output.
 
 [source,bash,role=execute]
 ----
-curl http://localhost:8080
+curl -s http://localhost:8080 | grep title
 ----
 
 [source,text]
 ----
-(placeholder — the default Red Hat test page)
+<title>Test Page for the HTTP Server on Red Hat Enterprise Linux</title>
 ----
 
-You should see the HTML of the standard test page.
 Not very interesting, but we'll examine how to add custom content in a later exercise.
 
 Let's look at what it is we built.

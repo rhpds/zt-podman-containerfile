@@ -65,10 +65,132 @@ This is what `--pull=newer` does, it changes that policy but just for this build
 podman build --pull=newer -t my-webserver:init .
 ----
 
+.Full build output _(click to expand)_
+[%collapsible]
+====
 [source,text]
 ----
-(placeholder — full rebuild: the base changed so nothing is cached; --pull=newer checks the registry for an updated ubi-init first)
+STEP 1/6: FROM registry.access.redhat.com/ubi10/ubi-init
+Trying to pull registry.access.redhat.com/ubi10/ubi-init:latest...
+Getting image source signatures
+Checking if image destination supports signatures
+Copying blob d4957f87e2ac done   | 
+Copying blob 6cbfcbeb6614 done   | 
+Copying config 534ffcc5aa done   | 
+Writing manifest to image destination
+Storing signatures
+STEP 2/6: RUN <<EOF (dnf -y install httpd...)
+Updating Subscription Management repositories.
+subscription-manager is operating in container mode.
+Red Hat Enterprise Linux 10 for x86_64 - BaseOS  46 MB/s |  47 MB     00:01    
+Red Hat Enterprise Linux 10 for x86_64 - AppStr 8.3 MB/s | 4.3 MB     00:00    
+Red Hat Universal Base Image 10 (RPMs) - BaseOS 3.5 MB/s | 181 kB     00:00    
+Red Hat Universal Base Image 10 (RPMs) - AppStr  12 MB/s | 420 kB     00:00    
+Red Hat Universal Base Image 10 (RPMs) - CodeRe 632 kB/s |  27 kB     00:00    
+Dependencies resolved.
+========================================================================================
+ Package              Arch    Version            Repository                         Size
+========================================================================================
+Installing:
+ httpd                x86_64  2.4.63-13.el10_2.8 ubi-10-for-x86_64-appstream-rpms   58 k
+Installing dependencies:
+ apr                  x86_64  1.7.5-3.el10       ubi-10-for-x86_64-appstream-rpms  127 k
+ apr-util             x86_64  1.6.3-23.el10_2.1  ubi-10-for-x86_64-appstream-rpms  104 k
+ apr-util-lmdb        x86_64  1.6.3-23.el10_2.1  ubi-10-for-x86_64-appstream-rpms   19 k
+ httpd-core           x86_64  2.4.63-13.el10_2.8 ubi-10-for-x86_64-appstream-rpms  1.5 M
+ httpd-filesystem     noarch  2.4.63-13.el10_2.8 ubi-10-for-x86_64-appstream-rpms   21 k
+ httpd-tools          x86_64  2.4.63-13.el10_2.8 ubi-10-for-x86_64-appstream-rpms   91 k
+ libbrotli            x86_64  1.1.0-8.el10_2.1   ubi-10-for-x86_64-baseos-rpms     351 k
+ lmdb-libs            x86_64  0.9.32-4.el10      rhel-10-for-x86_64-baseos-rpms     64 k
+ mailcap              noarch  2.1.54-8.el10      rhel-10-for-x86_64-baseos-rpms     37 k
+ redhat-logos-httpd   noarch  100.3-2.el10       ubi-10-for-x86_64-appstream-rpms   22 k
+Installing weak dependencies:
+ apr-util-openssl     x86_64  1.6.3-23.el10_2.1  ubi-10-for-x86_64-appstream-rpms   21 k
+ mod_http2            x86_64  2.0.29-5.el10_3.1  ubi-10-for-x86_64-appstream-rpms  171 k
+ mod_lua              x86_64  2.4.63-13.el10_2.8 ubi-10-for-x86_64-appstream-rpms   67 k
+
+Transaction Summary
+========================================================================================
+Install  14 Packages
+
+Total download size: 2.6 M
+Installed size: 7.0 M
+Downloading Packages:
+(1/14): libbrotli-1.1.0-8.el10_2.1.x86_64.rpm    11 MB/s | 351 kB     00:00    
+(2/14): apr-1.7.5-3.el10.x86_64.rpm              25 MB/s | 127 kB     00:00    
+(3/14): apr-util-1.6.3-23.el10_2.1.x86_64.rpm    25 MB/s | 104 kB     00:00    
+(4/14): apr-util-lmdb-1.6.3-23.el10_2.1.x86_64. 2.7 MB/s |  19 kB     00:00    
+(5/14): apr-util-openssl-1.6.3-23.el10_2.1.x86_ 5.7 MB/s |  21 kB     00:00    
+(6/14): httpd-2.4.63-13.el10_2.8.x86_64.rpm      14 MB/s |  58 kB     00:00    
+(7/14): httpd-core-2.4.63-13.el10_2.8.x86_64.rp  41 MB/s | 1.5 MB     00:00    
+(8/14): httpd-filesystem-2.4.63-13.el10_2.8.noa 5.4 MB/s |  21 kB     00:00    
+(9/14): httpd-tools-2.4.63-13.el10_2.8.x86_64.r 6.6 MB/s |  91 kB     00:00    
+(10/14): mod_lua-2.4.63-13.el10_2.8.x86_64.rpm  6.4 MB/s |  67 kB     00:00    
+(11/14): redhat-logos-httpd-100.3-2.el10.noarch 4.7 MB/s |  22 kB     00:00    
+(12/14): mod_http2-2.0.29-5.el10_3.1.x86_64.rpm  25 MB/s | 171 kB     00:00    
+(13/14): mailcap-2.1.54-8.el10.noarch.rpm       207 kB/s |  37 kB     00:00    
+(14/14): lmdb-libs-0.9.32-4.el10.x86_64.rpm     330 kB/s |  64 kB     00:00    
+--------------------------------------------------------------------------------
+Total                                            13 MB/s | 2.6 MB     00:00     
+Running transaction check
+Transaction check succeeded.
+Running transaction test
+Transaction test succeeded.
+Running transaction
+  Preparing        :                                                        1/1 
+  Installing       : apr-1.7.5-3.el10.x86_64                               1/14 
+  Installing       : redhat-logos-httpd-100.3-2.el10.noarch                2/14 
+  Running scriptlet: httpd-filesystem-2.4.63-13.el10_2.8.noarch            3/14 
+  Installing       : httpd-filesystem-2.4.63-13.el10_2.8.noarch            3/14 
+  Installing       : libbrotli-1.1.0-8.el10_2.1.x86_64                     4/14 
+  Installing       : mailcap-2.1.54-8.el10.noarch                          5/14 
+  Installing       : lmdb-libs-0.9.32-4.el10.x86_64                        6/14 
+  Installing       : apr-util-openssl-1.6.3-23.el10_2.1.x86_64             7/14 
+  Installing       : apr-util-1.6.3-23.el10_2.1.x86_64                     8/14 
+  Installing       : apr-util-lmdb-1.6.3-23.el10_2.1.x86_64                9/14 
+  Installing       : httpd-tools-2.4.63-13.el10_2.8.x86_64                10/14 
+  Installing       : httpd-core-2.4.63-13.el10_2.8.x86_64                 11/14 
+  Installing       : mod_lua-2.4.63-13.el10_2.8.x86_64                    12/14 
+  Installing       : mod_http2-2.0.29-5.el10_3.1.x86_64                   13/14 
+  Installing       : httpd-2.4.63-13.el10_2.8.x86_64                      14/14 
+  Running scriptlet: httpd-2.4.63-13.el10_2.8.x86_64                      14/14 
+Installed products updated.
+
+Installed:
+  apr-1.7.5-3.el10.x86_64                                                       
+  apr-util-1.6.3-23.el10_2.1.x86_64                                             
+  apr-util-lmdb-1.6.3-23.el10_2.1.x86_64                                        
+  apr-util-openssl-1.6.3-23.el10_2.1.x86_64                                     
+  httpd-2.4.63-13.el10_2.8.x86_64                                               
+  httpd-core-2.4.63-13.el10_2.8.x86_64                                          
+  httpd-filesystem-2.4.63-13.el10_2.8.noarch                                    
+  httpd-tools-2.4.63-13.el10_2.8.x86_64                                         
+  libbrotli-1.1.0-8.el10_2.1.x86_64                                             
+  lmdb-libs-0.9.32-4.el10.x86_64                                                
+  mailcap-2.1.54-8.el10.noarch                                                  
+  mod_http2-2.0.29-5.el10_3.1.x86_64                                            
+  mod_lua-2.4.63-13.el10_2.8.x86_64                                             
+  redhat-logos-httpd-100.3-2.el10.noarch                                        
+
+Complete!
+Updating Subscription Management repositories.
+subscription-manager is operating in container mode.
+30 files removed
+--> 1420dfa43061
+STEP 3/6: EXPOSE 80
+--> 2ef531af8795
+STEP 4/6: COPY app/index.html /var/www/html
+--> 57a2afd03826
+STEP 5/6: RUN systemctl enable httpd
+Created symlink '/etc/systemd/system/multi-user.target.wants/httpd.service' → '/usr/lib/systemd/system/httpd.service'.
+--> ebceb95ef99f
+STEP 6/6: CMD ["/sbin/init"]
+COMMIT my-webserver:init
+--> 079a70cb86dc
+Successfully tagged localhost/my-webserver:init
+079a70cb86dc32b89c0041406a95ec35f0430b1d6ae0439adfaabcdd78498b4d
 ----
+====
 
 Also notice the name in the `-t` changed slightly, we added `:init` to the end.
 This is known as a *tag*, an easy way to add some more identifying information for an admin.
@@ -84,7 +206,9 @@ podman images my-webserver
 
 [source,text]
 ----
-(placeholder — image list with my-webserver latest and init)
+REPOSITORY              TAG         IMAGE ID      CREATED         SIZE
+localhost/my-webserver  init        079a70cb86dc  35 seconds ago  271 MB
+localhost/my-webserver  latest      25be49e9bd6c  5 minutes ago   250 MB
 ----
 
 == Run it
@@ -101,7 +225,12 @@ curl http://localhost:8080
 
 [source,text]
 ----
-(placeholder — the same staged page)
+<HTML>
+<HEAD>
+<TITLE>My Web App</TITLE>
+</HEAD>
+This is my web app
+</HTML>
 ----
 
 Same service, different machinery, not a lot of visible change. 
@@ -114,7 +243,8 @@ podman ps
 
 [source,text]
 ----
-(placeholder — ps table; my-httpd-init COMMAND is /sbin/init)
+CONTAINER ID  IMAGE                        COMMAND     CREATED         STATUS         PORTS                 NAMES
+8407db3ceb2a  localhost/my-webserver:init  /sbin/init  29 seconds ago  Up 29 seconds  0.0.0.0:8080->80/tcp  my-httpd-init
 ----
 
 == Service base images
@@ -169,7 +299,50 @@ podman build -t my-webserver:rhhi .
 
 [source,text]
 ----
-(placeholder — rhhi build)
+STEP 1/2: FROM registry.access.redhat.com/hi/httpd:latest
+Trying to pull registry.access.redhat.com/hi/httpd:latest...
+Getting image source signatures
+Checking if image destination supports signatures
+Copying blob 8703b34eccd7 done   | 
+Copying blob a01f4326d05b done   | 
+Copying blob 84df3916785e done   | 
+Copying blob 4350d5ed51c0 done   | 
+Copying blob 929d8a401f18 done   | 
+Copying blob 6f29fea2f54b done   | 
+Copying blob e9c862cefa66 done   | 
+Copying blob 89eaca21ae89 done   | 
+Copying blob af3155f24d6b done   | 
+Copying blob 4c3340fbb2ca done   | 
+Copying blob 78d9857d2092 done   | 
+Copying blob 05082f2e68d8 done   | 
+Copying blob 88bd33d6285a done   | 
+Copying blob aa67e371d8e4 done   | 
+Copying blob 71310745b568 done   | 
+Copying blob c783072ae307 done   | 
+Copying blob 2a600dc12060 done   | 
+Copying blob 3e7295e4d0e8 done   | 
+Copying blob fa32038e8239 done   | 
+Copying blob 60244db82ab4 done   | 
+Copying blob 4a6fc15f038e done   | 
+Copying blob f18f8d7cb7ab done   | 
+Copying blob 4ab4423b9834 done   | 
+Copying blob 00ea97a99f2d done   | 
+Copying blob de89b23d9cc0 done   | 
+Copying blob 0f37c4b0f4d5 done   | 
+Copying blob 2a5e206ef15f done   | 
+Copying blob 241d76b89030 done   | 
+Copying blob d3a1ce4d0427 done   | 
+Copying blob ae090f0f8f26 done   | 
+Copying blob 4e538396828a done   | 
+Copying blob fec73ff7d9a9 done   | 
+Copying config 08be6fc95a done   | 
+Writing manifest to image destination
+Storing signatures
+STEP 2/2: COPY app/index.html /usr/local/apache2/htdocs/
+COMMIT my-webserver:rhhi
+--> f1b38f9e9c7e
+Successfully tagged localhost/my-webserver:rhhi
+f1b38f9e9c7e4de049a6ed9d2ce6aeb19edd8da0d555689f84925eab35b3c282
 ----
 
 Leave the `init` container running and start this one alongside it on
@@ -187,7 +360,12 @@ curl http://localhost:8081
 
 [source,text]
 ----
-(placeholder — the same staged page)
+<HTML>
+<HEAD>
+<TITLE>My Web App</TITLE>
+</HEAD>
+This is my web app
+</HTML>
 ----
 
 Both containers are up now, so compare them directly:
@@ -199,8 +377,14 @@ podman ps
 
 [source,text]
 ----
-(placeholder — ps table; my-httpd-init COMMAND is /sbin/init, my-httpd-rhhi runs the service image's own process — capture live)
+CONTAINER ID  IMAGE                        COMMAND     CREATED         STATUS         PORTS                             NAMES
+8407db3ceb2a  localhost/my-webserver:init  /sbin/init  2 minutes ago   Up 2 minutes   0.0.0.0:8080->80/tcp              my-httpd-init
+66421a01685d  localhost/my-webserver:rhhi              16 seconds ago  Up 16 seconds  0.0.0.0:8081->8080/tcp, 8443/tcp  my-httpd-rhhi
 ----
+
+The design of the RHHI `httpd` image uses the `ENTRYPOINT` instead of the `CMD` to start the service. 
+The main difference between these two ways of running an application in a container comes down to if arguments can be passed at run time.
+Each are useful on their own, depending on the application and container design, and can be used in combination for a fixed command that has some default arguments that the user can override easily.
 
 [source,bash,role=execute]
 ----
@@ -209,8 +393,14 @@ podman images my-webserver
 
 [source,text]
 ----
-(placeholder — image list with my-webserver latest and init)
+REPOSITORY              TAG         IMAGE ID      CREATED        SIZE
+localhost/my-webserver  rhhi        f1b38f9e9c7e  2 minutes ago  53.4 MB
+localhost/my-webserver  init        079a70cb86dc  4 minutes ago  271 MB
+localhost/my-webserver  latest      25be49e9bd6c  9 minutes ago  250 MB
 ----
+
+The image is also a lot smaller.
+This is because Hardened Images prioritize minimization of these service images to only ship the service and its dependencies.
 
 Three different approaches with the same end result, our web site is available.
 Each approach balances certain capabilities with certain tradeoffs.
