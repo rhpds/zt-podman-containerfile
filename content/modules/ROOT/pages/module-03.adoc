@@ -114,8 +114,6 @@ STEP 1/5: FROM registry.access.redhat.com/ubi10/ubi
 STEP 2/5: RUN <<EOF (set -e...)
 Updating Subscription Management repositories.
 subscription-manager is operating in container mode.
-Red Hat Enterprise Linux 10 for x86_64 - BaseOS  30 MB/s |  47 MB     00:01    
-Red Hat Enterprise Linux 10 for x86_64 - AppStr 7.9 MB/s | 4.3 MB     00:00    
 Red Hat Universal Base Image 10 (RPMs) - BaseOS 3.9 MB/s | 181 kB     00:00    
 Red Hat Universal Base Image 10 (RPMs) - AppStr 8.4 MB/s | 420 kB     00:00    
 Red Hat Universal Base Image 10 (RPMs) - CodeRe 786 kB/s |  27 kB     00:00    
@@ -133,8 +131,6 @@ Installing dependencies:
  httpd-filesystem     noarch  2.4.63-13.el10_2.8 ubi-10-for-x86_64-appstream-rpms   21 k
  httpd-tools          x86_64  2.4.63-13.el10_2.8 ubi-10-for-x86_64-appstream-rpms   91 k
  libbrotli            x86_64  1.1.0-8.el10_2.1   ubi-10-for-x86_64-baseos-rpms     351 k
- lmdb-libs            x86_64  0.9.32-4.el10      rhel-10-for-x86_64-baseos-rpms     64 k
- mailcap              noarch  2.1.54-8.el10      rhel-10-for-x86_64-baseos-rpms     37 k
  redhat-logos-httpd   noarch  100.3-2.el10       ubi-10-for-x86_64-appstream-rpms   22 k
 Installing weak dependencies:
  apr-util-openssl     x86_64  1.6.3-23.el10_2.1  ubi-10-for-x86_64-appstream-rpms   21 k
