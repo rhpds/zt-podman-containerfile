@@ -9,7 +9,7 @@ podman images my-webserver
 [source,text]
 ----
 REPOSITORY              TAG         IMAGE ID      CREATED        SIZE
-localhost/my-webserver  latest      0ae6d19aa5a9  9 minutes ago  318 MB
+localhost/my-webserver  latest      0ae6d19aa5a9  9 minutes ago  250 MB
 ----
 The `images` command gives us several key points, but look at the SIZE column.
 Now let's rerun that history command.
@@ -21,29 +21,29 @@ podman history my-webserver
 
 [source,text]
 ----
-ID            CREATED        CREATED BY                                     SIZE        COMMENT
-e40e2c60c20d  7 minutes ago  /bin/sh -c #(nop) CMD ["/usr/sbin/httpd","...  0B          
-<missing>     7 minutes ago  /bin/sh -c #(nop) EXPOSE 80                    0B          
-<missing>     7 minutes ago  /bin/sh -c dnf -y install httpd                98MB        FROM registry.access.redhat.com/ubi10/ubi:latest
-b2575cd88208  2 hours ago    /bin/sh -c #(nop) LABEL "org.opencontainer...  220MB       
-<missing>     2 hours ago    /bin/sh -c #(nop) COPY dir:e27be629f14cb96...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) COPY dir:e27be629f14cb96...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) CMD ["/bin/bash"]            0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) COPY file:7434e7ac38eae1...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) COPY dir:41680d257240032...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) ENV container oci            0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) LABEL io.openshift.tags=...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) LABEL io.openshift.expos...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) LABEL io.k8s.display-nam...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) LABEL io.k8s.description...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) LABEL description="The U...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) LABEL summary="Provides ...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) LABEL com.redhat.license...  0B          
-<missing>     2 hours ago    /bin/sh -c #(nop) LABEL maintainer="Red Ha...  0B    
+ID            CREATED             CREATED BY                                     SIZE        COMMENT
+41270dafc48b  About a minute ago  /bin/sh -c #(nop) CMD ["/usr/sbin/httpd","...  0B          
+<missing>     About a minute ago  /bin/sh -c #(nop) EXPOSE 80                    0B          
+<missing>     About a minute ago  /bin/sh -c dnf -y install httpd                29.7MB      FROM registry.access.redhat.com/ubi10/ubi:latest
+b2575cd88208  3 hours ago         /bin/sh -c #(nop) LABEL "org.opencontainer...  220MB       
+<missing>     3 hours ago         /bin/sh -c #(nop) COPY dir:e27be629f14cb96...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) COPY dir:e27be629f14cb96...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) CMD ["/bin/bash"]            0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) COPY file:7434e7ac38eae1...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) COPY dir:41680d257240032...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) ENV container oci            0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL io.openshift.tags=...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL io.openshift.expos...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL io.k8s.display-nam...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL io.k8s.description...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL description="The U...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL summary="Provides ...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL com.redhat.license...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL maintainer="Red Ha...  0B  
 ----
 
 Everything above the line that has the `COMMENT` that includes our `FROM` line was done in our build.
-About 100 megabytes was added from the layer created by the `dnf install` command. 
+Almost 30 megabytes was added by the layer created by the `dnf install` command, some of which is cache we don't actually need. 
 Let's run a few commands against our running container to see what's inside.
 
 == Look inside your image
@@ -139,7 +139,7 @@ podman images my-webserver
 [source,text]
 ----
 REPOSITORY              TAG         IMAGE ID      CREATED             SIZE
-localhost/my-webserver  latest      ec8f91303b26  About a minute ago  318 MB
+localhost/my-webserver  latest      ec8f91303b26  About a minute ago  250 MB
 ----
 
 Well that didn't really change the size at all, what happened?
@@ -154,14 +154,14 @@ podman history my-webserver
 
 [source,text]
 ----
-ID            CREATED             CREATED BY                                     SIZE        COMMENT
-416fdf596bf4  About a minute ago  /bin/sh -c #(nop) CMD ["/usr/sbin/httpd","...  0B          
-<missing>     About a minute ago  /bin/sh -c #(nop) EXPOSE 80                    0B          
-<missing>     About a minute ago  /bin/sh -c dnf clean all                       121kB       
-e40e2c60c20d  13 minutes ago      /bin/sh -c dnf -y install httpd                98MB        FROM registry.access.redhat.com/ubi10/ubi:latest
+ID            CREATED         CREATED BY                                     SIZE        COMMENT
+46c548924dc4  50 seconds ago  /bin/sh -c #(nop) CMD ["/usr/sbin/httpd","...  0B          
+<missing>     50 seconds ago  /bin/sh -c #(nop) EXPOSE 80                    0B          
+<missing>     50 seconds ago  /bin/sh -c dnf clean all                       95.7kB      
+41270dafc48b  6 minutes ago   /bin/sh -c dnf -y install httpd                29.7MB      FROM registry.access.redhat.com/ubi10/ubi:latest
 ----
 
-Well it says there's a difference in size of a few hundred kilobytes, but notice how each `dnf` command is a separate layer? 
+Well it says there's a difference of only about a hundred kilobytes, but notice how each `dnf` command is a separate layer? 
 The removal of the cache files only happened in the layer *above* the install.
 The files themselves still exist in the *original* install layer, from the cache.
 Later layers can *hide* files from earlier layers in the final container, but they can't actually *remove* them.
@@ -180,7 +180,7 @@ So shell syntax like `&&` to join multiple commands and `\` to continue lines fo
 However, `podman` and `docker` support a better way to run more commands in readable ways, `heredoc` syntax.
 
 Just like in shell syntax `<<` signals the start, and `EOF` is the delimiter that defines the script block.
-We can add all sorts of useful things, not just our two `dnf` commands but also we can make sure that an error in the `heredoc` will cause the step to fail and not give us a successful build of a broken image.
+We can add all sorts of useful things, not just our two `dnf` commands but also we can make sure RUN dnf clean all that an error in the `heredoc` will cause the step to fail and not give us a successful build of a broken image.
 
 [source,bash,role=execute]
 ----
@@ -209,8 +209,6 @@ STEP 1/4: FROM registry.access.redhat.com/ubi10/ubi
 STEP 2/4: RUN <<EOF (set -e...)
 Updating Subscription Management repositories.
 subscription-manager is operating in container mode.
-Red Hat Enterprise Linux 10 for x86_64 - BaseOS  40 MB/s |  47 MB     00:01    
-Red Hat Enterprise Linux 10 for x86_64 - AppStr 7.3 MB/s | 4.3 MB     00:00    
 Red Hat Universal Base Image 10 (RPMs) - BaseOS 3.3 MB/s | 181 kB     00:00    
 Red Hat Universal Base Image 10 (RPMs) - AppStr 9.3 MB/s | 420 kB     00:00    
 Red Hat Universal Base Image 10 (RPMs) - CodeRe 827 kB/s |  27 kB     00:00    
@@ -253,7 +251,7 @@ Notice the build didn't use the cached install layer.
 This is something to keep in mind as you design your `Containerfiles`.
 Where changes are made and how often will impact your build times.
 
-But did this new fancy syntax actually solve our size problem?
+So did putting both commands in one layer change the size?
 
 [source,bash,role=execute]
 ----
@@ -263,9 +261,9 @@ podman images my-webserver
 [source,text]
 ----
 REPOSITORY              TAG         IMAGE ID      CREATED             SIZE
-localhost/my-webserver  latest      740e05b7d4e1  About a minute ago  250 MB
+localhost/my-webserver  latest      740e05b7d4e1  About a minute ago  249 MB
 ----
 
-Not a huge size change, but we can see the effect of how layer order and commands work.
+Barely, and that's the point worth understanding here. There wasn't much cache to reclaim because the UBI base only pulls from a few small repositories. But because the cleanup ran in the *same* layer as the install, whatever cache existed never became part of the committed image. With a larger install or bigger repositories attached, that same technique can save hundreds of megabytes.
 
 Let's take a closer look at the layer ordering and how we can use some other commands in the `Containerfile` to customize it further.

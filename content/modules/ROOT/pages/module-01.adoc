@@ -82,18 +82,9 @@ Watch the output while it runs:
 [source,text]
 ----
 STEP 1/4: FROM registry.access.redhat.com/ubi10/ubi
-Trying to pull registry.access.redhat.com/ubi10/ubi:latest...
-Getting image source signatures
-Checking if image destination supports signatures
-Copying blob 465cdc61d8a0 done   | 
-Copying config b2575cd882 done   | 
-Writing manifest to image destination
-Storing signatures
 STEP 2/4: RUN dnf -y install httpd
 Updating Subscription Management repositories.
 subscription-manager is operating in container mode.
-Red Hat Enterprise Linux 10 for x86_64 - AppStr 7.6 MB/s | 4.3 MB     00:00    
-Red Hat Enterprise Linux 10 for x86_64 - BaseOS  40 MB/s |  47 MB     00:01    
 Red Hat Universal Base Image 10 (RPMs) - BaseOS 2.8 MB/s | 181 kB     00:00    
 Red Hat Universal Base Image 10 (RPMs) - AppStr 7.6 MB/s | 420 kB     00:00    
 Red Hat Universal Base Image 10 (RPMs) - CodeRe 872 kB/s |  27 kB     00:00    
