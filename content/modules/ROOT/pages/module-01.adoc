@@ -1,0 +1,144 @@
+= Build an Image
+
+Every container image begins as a list of commands like a recipe.
+In this lab, you'll write a `Containerfile` from scratch and build it into a working image.
+
+== The recipe
+
+A working directory has been staged for you.
+
+[source,bash,role=execute]
+----
+ls ~/my-container
+----
+
+A `Containerfile` lists instructions top to bottom, and the build executes each one in order.
+This is similar to how a `Makefile` automates software builds.
+We'll create a simple web server to demonstrate how these are used.
+
+Open an editor and create the following file:
+
+[source,bash,role=execute]
+----
+vi ~/my-container/Containerfile
+----
+
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/ubi10/ubi # <1>
+RUN dnf -y install httpd # <2>
+EXPOSE 80 # <3>
+CMD ["/usr/sbin/httpd","-DFOREGROUND"] # <4>
+----
+<1> The base image that everything else builds on. 
+<2> Runs a command inside the image being built. 
+<3> Documents that the service listens on port 80. 
+<4> The image's default process, becomes PID 1 and receives any signals.
+
+
+[NOTE]
+====
+`nano` and `emacs` are installed too if you are more comfortable with
+either of those — the instructions in this lab use `vi`.
+====
+
+In the `FROM` instruction, base images are the foundation of an application image.
+These set not only the boundaries of what the application can do, but also how we customize the end image.
+We'll discuss that impact a little later on.
+
+Here we start with UBI 10, which provides a redistributable subset of RHEL.
+Starting with a different OS or a more limited version of the UBI base could change the available tools for `RUN` instructions, like `dnf`.
+
+`EXPOSE` and `CMD` are container internal commands.
+They set state or options used by the container runtime that launches a container from the image.
+
+This is not a complete list of instructions, and many can take additional options for more control.
+
+== Build it
+
+Let's build the image using `podman` and discuss what that list of instructions is doing along the way.
+
+This first time, we're going to spell out a few things in the `build` command that we'll do a little more conventionally later.
+
+The `-t` option sets the name and tag for the image.
+This is how we can provide a human readable reference for our image.
+
+The `-f` option sets the filename for the build to use.
+By default it will look for a file named  `Containerfile` or `Dockerfile` which is conventional, but you can use this to set it explicitly.
+This lets you have multiple files in a project, say to create images that differ only by base image like RHEL or Fedora versions.
+
+The last argument is the context directory.
+This is the working root where the build should find not only the `Containerfile` but any other files related to the build.
+Typically manual builds will happen in the same directory as the context directory so you'll see this as `.` in a lot of examples.
+This can be useful in automation or CI/CD systems.
+
+[source,bash,role=execute]
+----
+podman build -t my-webserver -f Containerfile ~/my-container
+----
+
+Watch the output while it runs:
+
+[source,text]
+----
+STEP 1/4: FROM registry.access.redhat.com/ubi10/ubi
+...
+STEP 2/4: RUN dnf -y install httpd
+...
+(placeholder — full build output, captured live)
+...
+STEP 4/4: CMD ["/usr/sbin/httpd","-DFOREGROUND"]
+COMMIT my-webserver
+...
+----
+
+Each instruction executes as a numbered step in the order they are written.
+Images are built in layers, the result of each step serves as the base for the next.
+The `STEP` shows the line in the `Containerfile` that's being executed, and what follows is the resulting output.
+
+Also notice that at the end of each step is a hash.
+This isn't a random output, but the actual ID of the image created by that step.
+Each layer is a real, complete container image that gets cached. 
+The `COMMIT` line is where the final image is created and the name and tag get applied.
+
+== Examine what you built
+
+We now have an image that we can launch an instance of as a container.
+There's another lab available if you'd like to know more about how to run containers as services, for now just run the following command.
+
+[source,bash,role=execute]
+----
+podman run -d --name my-httpd -p 8080:80 my-webserver
+----
+`-d` runs the container in the background, so we can test it.
+`--name` gives us a known value for our container's name, otherwise it will get an auto-generated one.
+`-p 8080:80` publishes the container's port 80 on host port 8080, so this works as a normal user.
+
+To test it, we can use `curl`:
+
+[source,bash,role=execute]
+----
+curl http://localhost:8080
+----
+
+[source,text]
+----
+(placeholder — the default Red Hat test page)
+----
+
+You should see the HTML of the standard test page.
+Not very interesting, but we'll examine how to add custom content in a later exercise.
+
+Let's look at what it is we built.
+
+[source,bash,role=execute]
+----
+podman history my-webserver
+----
+
+The `history` command examines an image and reports on each layer it finds.
+Notice it includes the ID of the layer that matches the `build` output, but also gives details like the size of a specific layer and what the build actually ran.
+Container internals like `EXPOSE` and `CMD` show up as 0B since these are basically metadata.
+You'll also see information carried by the base layer when built by the distributor, in this case Red Hat.
+
+Let's dig a little deeper into those layers in the next exercise.

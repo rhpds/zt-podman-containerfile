@@ -3,16 +3,19 @@ antora:
   name: modules
   dir: www
   modules:
-    - name: "01-containerfile-basics"
-      label: "Containerfile Basics"
-      solveButton: true
-    - name: "02-modify-image"
-      label: "Modify Image"
-      solveButton: true
-    - name: "03-running-init"
-      label: "Running Init"
-      solveButton: true
+    - name: "module-01"
+      label: "Build an Image"
+      solveButton: false
+    - name: "module-02"
+      label: "What Ships in a Layer"
+      solveButton: false
+    - name: "module-03"
+      label: "Rebuild with the Cache"
+      solveButton: false
+    - name: "module-04"
+      label: "Exploring Base Images"
+      solveButton: false
 
 tabs:
   - name: ">_ terminal"
-    url: /wetty/ssh/root
+    url: /wetty

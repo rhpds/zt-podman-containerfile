@@ -1,0 +1,182 @@
+= What Ships in a Layer
+
+The `history` shows us the command executed and the resulting size of that specific layer, but how big is the image overall?
+
+[source,bash,role=execute]
+----
+podman images my-webserver
+----
+[source,text]
+----
+(placeholder — images output focusing on size)
+----
+The `images` command gives us several key points, but look at the SIZE column.
+Now let's rerun that history command.
+
+[source,bash,role=execute]
+----
+podman history my-webserver
+----
+
+[source,text]
+----
+(placeholder — history table; the RUN layer's SIZE is the big one)
+----
+
+Most of the size comes from the layer created by the `dnf install` command. 
+Let's run a few commands against our running container to see what's inside.
+
+== Look inside your image
+
+The `exec` command lets us use commands inside the container.
+Here `ls` is the in the container and looking at the filesystem of the container, not the host.
+
+[source,bash,role=execute]
+----
+podman exec my-httpd ls -alh /var/cache
+----
+
+[source,text]
+----
+(placeholder — cache directory listing)
+----
+
+The `dnf install` step left its cache behind, and the cache is now part of our final image.
+
+
+== How do layers interact
+
+We know that `dnf` can clean up after itself and that containers are usually rebuilt and replaced, not updated in place.
+We can add a line to remove the cache, that should solve our problem.
+
+First, let's change into the working directory from here on and use the more conventional format for builds
+[source,bash,role=execute]
+----
+cd ~/my-container
+----
+
+Edit your `Containerfile` to add a new `RUN` line that removes all the working files for `dnf`.
+[source,bash,role=execute]
+----
+vi Containerfile
+----
+
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/ubi10/ubi
+RUN dnf -y install httpd
+RUN dnf clean all # <1>
+EXPOSE 80
+CMD ["/usr/sbin/httpd","-DFOREGROUND"]
+----
+<1> Added below the install — watch what happens.
+
+Now rebuild the image, we can drop the explicit name of the file and use `.` as our context.
+You will see this format very often in other examples that presume you are working in the context directory.
+
+[source,bash,role=execute]
+----
+podman build -t my-webserver .
+----
+
+[source,text]
+----
+(placeholder — build output; the install step is CACHED, only the new step runs)
+----
+
+Notice the build moved a lot faster, and the install step looks like it was skipped, why?
+Those previous layers are all cached, and since we didn't make any changes `podman build` just reused the cached layers.
+
+Now check the size of our image without the `dnf` cache.
+
+[source,bash,role=execute]
+----
+podman images
+----
+
+[source,text]
+----
+(placeholder — image list; size barely moved)
+----
+
+Well that didn't really change the size at all, what happened?
+
+== The fix 
+
+Let's look at the history once more to see the commands and layers.
+[source,bash,role=execute]
+----
+podman history my-webserver
+----
+
+[source,text]
+----
+(placeholder — history table; the RUN layer's SIZE is the big one)
+----
+
+Notice how each `dnf` command is a separate layer? 
+The removal of the cache files only happened in the layer *above* the install.
+The files themselves still exist in the *original* install layer, from the cache.
+Later layers can *hide* files from earlier layers in the final container, but they can't actually *remove* them.
+All of the commands to effect a layer have to be in the same instruction in the `Containerfile`.
+
+You'll see lines like this one in examples, where multiple commands are joined by `&&`.
+[source,dockerfile]
+----
+RUN dnf -y install httpd && dnf clean all
+----
+
+If you look back at the `history` output, there's the key for why using a shell logical AND works.
+A `RUN` instruction passes whatever is on the line into `/bin/sh -c` to be executed.
+So shell syntax like `&&` to join multiple commands and `\` to continue lines for readability are common.
+
+However, `podman` and `docker` support a better way to run more commands in readable ways, `heredoc` syntax.
+
+Just like in shell syntax `<<` signals the start, and `EOF` is the delimiter that defines the script block.
+We can add all sorts of useful things, not just our two `dnf` commands but also we can make sure that an error in the `heredoc` will cause the step to fail and not give us a successful build of a broken image.
+
+[source,bash,role=execute]
+----
+vi Containerfile
+----
+
+Replace the two `RUN` commands with the block below:
+[source,dockerfile]
+----
+RUN <<EOF
+set -e
+dnf -y install httpd
+dnf clean all
+echo "Apache installed and cache clean"
+EOF
+----
+Go ahead and rebuild the image.
+[source,bash,role=execute]
+----
+podman build -t my-webserver .
+----
+
+[source,text]
+----
+(placeholder — build output; the changed step re-runs from scratch, no CACHED)
+----
+
+Notice the build didn't use the cached install layer.
+This is something to keep in mind as you design your `Containerfiles`.
+Where changes are made and how often will impact your build times.
+
+But did this new fancy syntax actually solve our size problem?
+
+[source,bash,role=execute]
+----
+podman images
+----
+
+[source,text]
+----
+(placeholder — image list; smaller now)
+----
+
+Looks like it did!
+
+Let's take a closer look at the layer ordering and how we can use some other commands in the `Containerfile` to customize it further.

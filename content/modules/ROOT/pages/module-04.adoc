@@ -1,0 +1,225 @@
+= Exploring Different Kinds of Base Images
+
+General OS base images are very flexible, but they aren't the only kinds of base images you can use to build custom containers.
+
+So far httpd has been started directly as PID 1, managing child processes and handling signals. 
+Some services are not designed for that, they expect a supervisor that starts and stops them cleanly. 
+Let's look at an `init` container, designed just for those types of services.
+
+== Using systemd in a container
+
+There's a version of the UBI base image that includes a version of `systemd` aimed at the in container use case.
+To use it, we just need to change the `FROM` line to use the `ubi-init` image.
+
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/ubi10/ubi-init
+----
+
+We use `systemd` in the container almost the same as we would on a host.
+We can enable services via `systemctl`, which will start them when the container starts, just like on a host.
+
+Add this line somewhere near the `EXPOSE` line in the `Containerfile`.
+[source,dockerfile]
+----
+RUN systemctl enable httpd
+----
+
+Since we want `systemd` to be PID 1, not `httpd`, we also need to change the `CMD` line.
+[source,dockerfile]
+----
+CMD ["/sbin/init"]
+----
+
+[source,bash,role=execute]
+----
+vi Containerfile
+----
+The whole file should read:
+
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/ubi10/ubi-init # <1>
+RUN <<EOF
+dnf -y install httpd
+dnf clean all
+EOF
+EXPOSE 80
+COPY app/index.html /var/www/html
+RUN systemctl enable httpd # <2>
+CMD ["/sbin/init"] # <3>
+----
+<1> The systemd-enabled UBI variant.
+<2> httpd starts when the container's systemd starts.
+<3> systemd takes the signals and manages httpd as a service.
+
+
+== Build on the systemd version
+
+Normally, if the base image is in the local container store, `podman` will use that one and only pull an image if it doesn't find a copy.
+We mentioned that you can tell `podman` to ignore the cache to pull in new packages, you can also tell it to make sure the base image on disk is the latest version.
+This is what `--pull=newer` does, it changes that policy but just for this build.
+
+[source,bash,role=execute]
+----
+podman build --pull=newer -t my-webserver:init .
+----
+
+[source,text]
+----
+(placeholder — full rebuild: the base changed so nothing is cached; --pull=newer checks the registry for an updated ubi-init first)
+----
+
+Also notice the name in the `-t` changed slightly, we added `:init` to the end.
+This is known as a *tag*, an easy way to add some more identifying information for an admin.
+By default, the `latest` tag will be applied if one wasn't supplied.
+Using tags lets you specify things like versions of an image, or changes to how they run, or really anything you like.
+
+You now have two tagged variants of your image:
+
+[source,bash,role=execute]
+----
+podman images my-webserver
+----
+
+[source,text]
+----
+(placeholder — image list with my-webserver latest and init)
+----
+
+== Run it
+
+[source,bash,role=execute]
+----
+podman run -d --name my-httpd-init -p 8080:80 my-webserver:init
+----
+
+[source,bash,role=execute]
+----
+curl http://localhost:8080
+----
+
+[source,text]
+----
+(placeholder — the same staged page)
+----
+
+Same service, different machinery, not a lot of visible change. 
+However, you can see the difference in the `ps` output.
+
+[source,bash,role=execute]
+----
+podman ps
+----
+
+[source,text]
+----
+(placeholder — ps table; my-httpd-init COMMAND is /sbin/init)
+----
+
+== Service base images
+
+In both of these UBI images, we're installing `httpd` ourselves.
+This can be useful if we have custom modules we need to load, or additional software to run alongside the web server.
+
+But we're just adding standard HTML pages, and a lot of options, like custom docroots, can be controlled by config files.
+Instead of managing the updates, we could instead start with a base image that provides a working `httpd` service as the base.
+
+Red Hat Hardened Images is one source for these sorts of "service" images for web servers, database servers, etc.
+The https://images.redhat.com/?name=httpd[overview page for the httpd^] image shows us how to create a custom image with static content.
+
+
+First we need to use the new base image in the `FROM` line.
+
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/hi/httpd:latest
+----
+
+Then we have a pre-configured location this `httpd` server will use as the docroot.
+
+[source,dockerfile]
+----
+COPY app/index.html /usr/local/apache2/htdocs/
+----
+
+And finally, this isn't an `init` container, so we need to remove the `systemctl` line.
+We can also remove the `EXPOSE` and `CMD` lines as those are already defined in the base image we're using.
+
+[source,bash,role=execute]
+----
+vi Containerfile
+----
+The whole file should read:
+
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/hi/httpd:latest # <1>
+COPY app/index.html /usr/local/apache2/htdocs/
+----
+<1> A Hardened Images service base with httpd pre-configured.
+
+That's another advantage of these sorts of pre-configured service images.
+We really only need to add our content, and everything else we can get from the image itself.
+
+[source,bash,role=execute]
+----
+podman build -t my-webserver:rhhi .
+----
+
+[source,text]
+----
+(placeholder — rhhi build)
+----
+
+Leave the `init` container running and start this one alongside it on
+the next port:
+
+[source,bash,role=execute]
+----
+podman run -d --name my-httpd-rhhi -p 8081:8080 my-webserver:rhhi
+----
+
+[source,bash,role=execute]
+----
+curl http://localhost:8081
+----
+
+[source,text]
+----
+(placeholder — the same staged page)
+----
+
+Both containers are up now, so compare them directly:
+
+[source,bash,role=execute]
+----
+podman ps
+----
+
+[source,text]
+----
+(placeholder — ps table; my-httpd-init COMMAND is /sbin/init, my-httpd-rhhi runs the service image's own process — capture live)
+----
+
+[source,bash,role=execute]
+----
+podman images my-webserver
+----
+
+[source,text]
+----
+(placeholder — image list with my-webserver latest and init)
+----
+
+Three different approaches with the same end result, our web site is available.
+Each approach balances certain capabilities with certain tradeoffs.
+General OS base containers are more flexible but may carry more packages.
+Images with init systems can handle services better but may need more configuring.
+Purpose built service images may be faster to deploy but lack flexibility.
+The choice is yours.
+
+This has been a simple introduction to creating containerized applications.
+There a lot of patterns and examples for handling more complicated dependencies, removing build artifacts from production images, and more.
+You should have a good baseline to explore further topics in containerization, including other ways to run services like `pods` and `qualdets` or distroless images like the RHHI `httpd` image.
+

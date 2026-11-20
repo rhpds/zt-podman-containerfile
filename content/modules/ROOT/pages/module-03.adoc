@@ -1,0 +1,97 @@
+= Rebuild with the Cache
+
+You've built a default web server, which isn't really useful until it can serve our content.
+A sample page is available in the `app` directory, we'll add that to represent our website.
+
+== Add your content
+
+[source,bash,role=execute]
+----
+cat app/index.html
+----
+
+[source,text]
+----
+(placeholder — the staged index.html)
+----
+
+To get a local file into the final image, we use the `COPY` instruction.
+This takes the path to the file or directory of the source, and the destination in the image filesystem.
+
+To look at how layering works, we're going to add this at the very end of the `Containerfile`.
+In practice, you'd likely keep these earlier and grouped with other content changes logically, but for this lab we're going to break convention for the sake of an example.
+
+Edit the file and rebuild:
+
+[source,dockerfile]
+----
+EXPOSE 80
+COPY app/index.html /var/www/html # <1>
+----
+<1> Copies from the build context passed to `podman build` 
+[source,bash,role=execute]
+----
+vi Containerfile
+----
+Here, `app` is relative to the directory we pass as the context directory to the build command.
+
+[source,bash,role=execute]
+----
+podman build -t my-webserver .
+----
+
+[source,text]
+----
+(placeholder — build output with CACHED on the steps above the change, only the COPY step running)
+----
+
+The build picked up at the first change: every layer above it was reused as-is, and only the `COPY` step ran. 
+
+
+== See your page
+
+The old container is still running, so we'll replace it with our new image.
+
+[source,bash,role=execute]
+----
+podman run --replace -d --name my-httpd -p 8080:80 my-webserver
+----
+
+Now check that our web site is being served instead of the test page.
+[source,bash,role=execute]
+----
+curl http://localhost:8080
+----
+
+[source,text]
+----
+(placeholder — the staged page contents)
+----
+
+== Caches, sometimes good sometimes not so good
+
+Keeping layers and using the cache to speed up builds is the default behavior for most build systems.
+If you pull a new base image locally, that will trigger a full rebuild since the very first foundational layer will be new.
+Sometimes, you may want to rebuild a custom image when there isn't an update to the base, like to pick up package or content updates.
+
+In cases like that you can instruct `podman` to ignore the cache and build from scratch.
+
+[source,bash,role=execute]
+----
+podman build --no-cache -t my-webserver .
+----
+
+[source,text]
+----
+(placeholder — every step re-running, no CACHED anywhere)
+----
+
+Tear down before the next module — the next run needs port 8080:
+
+[source,bash,role=execute]
+----
+podman rm -f my-httpd
+----
+
+Every change so far has been *below* the expensive layers. What happens
+when the change is the base image itself?
