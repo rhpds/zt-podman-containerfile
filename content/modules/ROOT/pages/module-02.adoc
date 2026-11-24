@@ -1,0 +1,269 @@
+= What Ships in a Layer
+
+The `history` shows us the command executed and the resulting size of that specific layer, but how big is the image overall?
+
+[source,bash,role=execute]
+----
+podman images my-webserver
+----
+[source,text]
+----
+REPOSITORY              TAG         IMAGE ID      CREATED        SIZE
+localhost/my-webserver  latest      0ae6d19aa5a9  9 minutes ago  250 MB
+----
+The `images` command gives us several key points, but look at the SIZE column.
+Now let's rerun that history command.
+
+[source,bash,role=execute]
+----
+podman history my-webserver
+----
+
+[source,text]
+----
+ID            CREATED             CREATED BY                                     SIZE        COMMENT
+41270dafc48b  About a minute ago  /bin/sh -c #(nop) CMD ["/usr/sbin/httpd","...  0B          
+<missing>     About a minute ago  /bin/sh -c #(nop) EXPOSE 80                    0B          
+<missing>     About a minute ago  /bin/sh -c dnf -y install httpd                29.7MB      FROM registry.access.redhat.com/ubi10/ubi:latest
+b2575cd88208  3 hours ago         /bin/sh -c #(nop) LABEL "org.opencontainer...  220MB       
+<missing>     3 hours ago         /bin/sh -c #(nop) COPY dir:e27be629f14cb96...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) COPY dir:e27be629f14cb96...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) CMD ["/bin/bash"]            0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) COPY file:7434e7ac38eae1...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) COPY dir:41680d257240032...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) ENV container oci            0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL io.openshift.tags=...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL io.openshift.expos...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL io.k8s.display-nam...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL io.k8s.description...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL description="The U...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL summary="Provides ...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL com.redhat.license...  0B          
+<missing>     3 hours ago         /bin/sh -c #(nop) LABEL maintainer="Red Ha...  0B  
+----
+
+Everything above the line that has the `COMMENT` that includes our `FROM` line was done in our build.
+Almost 30 megabytes was added by the layer created by the `dnf install` command, some of which is cache we don't actually need. 
+Let's run a few commands against our running container to see what's inside.
+
+== Look inside your image
+
+The `exec` command lets us use commands inside the container.
+Here `ls` is the in the container and looking at the filesystem of the container, not the host.
+
+[source,bash,role=execute]
+----
+podman exec my-httpd ls -alh /var/cache
+----
+
+[source,text]
+----
+total 4.0K
+drwxr-xr-x. 1 root   root     46 Nov 20 21:03 .
+drwxr-xr-x. 1 root   root     17 Nov 20 21:03 ..
+drwxr-xr-x. 2 root   root      6 Apr  2  2025 bpf
+drwxr-x---. 2 root   root      6 Aug 11 00:00 cloud-what
+drwxr-xr-x. 1 root   root   4.0K Nov 20 21:03 dnf
+drwx------. 3 apache apache   19 Nov 20 21:03 httpd
+drwx------. 1 root   root     23 Nov 20 21:03 ldconfig
+----
+
+The `dnf install` step left its cache behind, and the cache is now part of our final image.
+
+
+== How do layers interact
+
+We know that `dnf` can clean up after itself and that containers are usually rebuilt and replaced, not updated in place.
+We can add a line to remove the cache, that should solve our problem.
+
+First, let's change into the working directory from here on and use the more conventional format for builds
+[source,bash,role=execute]
+----
+cd ~/my-container
+----
+
+Edit your `Containerfile` to add a new `RUN` line that removes all the working files for `dnf`.
+[source,bash,role=execute]
+----
+vi Containerfile
+----
+
+[source,dockerfile]
+----
+FROM registry.access.redhat.com/ubi10/ubi
+RUN dnf -y install httpd
+RUN dnf clean all # <1>
+EXPOSE 80
+CMD ["/usr/sbin/httpd","-DFOREGROUND"]
+----
+<1> Added below the install — watch what happens.
+
+Now rebuild the image, we can drop the explicit name of the file and use `.` as our context.
+You will see this format very often in other examples that presume you are working in the context directory.
+
+[source,bash,role=execute]
+----
+podman build -t my-webserver .
+----
+
+[source,text]
+----
+STEP 1/5: FROM registry.access.redhat.com/ubi10/ubi
+STEP 2/5: RUN dnf -y install httpd
+--> Using cache e40e2c60c20dc27cd6f74c1d5dc50639876f23dc91bb3866cd4623f950dccdd1
+--> e40e2c60c20d
+STEP 3/5: RUN dnf clean all
+Updating Subscription Management repositories.
+subscription-manager is operating in container mode.
+30 files removed
+--> 416fdf596bf4
+STEP 4/5: EXPOSE 80
+--> cfec85930612
+STEP 5/5: CMD ["/usr/sbin/httpd","-DFOREGROUND"]
+COMMIT my-webserver
+--> ec8f91303b26
+Successfully tagged localhost/my-webserver:latest
+ec8f91303b268a1b222609f39df611a768f00a9ce15bdf6f16f646067bd5dc4e
+----
+
+Notice the build moved a lot faster, and the install step says "Using cache".
+Those layers from the previous build are all cached, and since we didn't make any changes `podman build` just reused the cached layers.
+
+Now check the size of our image without the `dnf` cache.
+
+[source,bash,role=execute]
+----
+podman images my-webserver
+----
+
+[source,text]
+----
+REPOSITORY              TAG         IMAGE ID      CREATED             SIZE
+localhost/my-webserver  latest      ec8f91303b26  About a minute ago  250 MB
+----
+
+Well that didn't really change the size at all, what happened?
+
+== The fix 
+
+Let's look at the history once more to see the commands and layers.
+[source,bash,role=execute]
+----
+podman history my-webserver
+----
+
+[source,text]
+----
+ID            CREATED         CREATED BY                                     SIZE        COMMENT
+46c548924dc4  50 seconds ago  /bin/sh -c #(nop) CMD ["/usr/sbin/httpd","...  0B          
+<missing>     50 seconds ago  /bin/sh -c #(nop) EXPOSE 80                    0B          
+<missing>     50 seconds ago  /bin/sh -c dnf clean all                       95.7kB      
+41270dafc48b  6 minutes ago   /bin/sh -c dnf -y install httpd                29.7MB      FROM registry.access.redhat.com/ubi10/ubi:latest
+----
+
+Well it says there's a difference of only about a hundred kilobytes, but notice how each `dnf` command is a separate layer? 
+The removal of the cache files only happened in the layer *above* the install.
+The files themselves still exist in the *original* install layer, from the cache.
+Later layers can *hide* files from earlier layers in the final container, but they can't actually *remove* them.
+All of the commands to effect a layer have to be in the same instruction in the `Containerfile`.
+
+You'll see lines like this one in examples, where multiple commands are joined by `&&`.
+[source,dockerfile]
+----
+RUN dnf -y install httpd && dnf clean all
+----
+
+If you look back at the `history` output, there's the key for why using a shell logical AND works.
+A `RUN` instruction passes whatever is on the line into `/bin/sh -c` to be executed.
+So shell syntax like `&&` to join multiple commands and `\` to continue lines for readability are common.
+
+However, `podman` and `docker` support a better way to run more commands in readable ways, `heredoc` syntax.
+
+Just like in shell syntax `<<` signals the start, and `EOF` is the delimiter that defines the script block.
+We can add all sorts of useful things, not just our two `dnf` commands but also we can make sure RUN dnf clean all that an error in the `heredoc` will cause the step to fail and not give us a successful build of a broken image.
+
+[source,bash,role=execute]
+----
+vi Containerfile
+----
+
+Replace the two `RUN` commands with the block below:
+[source,dockerfile]
+----
+RUN <<EOF
+set -e
+dnf -y install httpd
+dnf clean all
+echo "Apache installed and cache clean"
+EOF
+----
+Go ahead and rebuild the image.
+[source,bash,role=execute]
+----
+podman build -t my-webserver .
+----
+
+[source,text]
+----
+STEP 1/4: FROM registry.access.redhat.com/ubi10/ubi
+STEP 2/4: RUN <<EOF (set -e...)
+Updating Subscription Management repositories.
+subscription-manager is operating in container mode.
+Red Hat Universal Base Image 10 (RPMs) - BaseOS 3.3 MB/s | 181 kB     00:00    
+Red Hat Universal Base Image 10 (RPMs) - AppStr 9.3 MB/s | 420 kB     00:00    
+Red Hat Universal Base Image 10 (RPMs) - CodeRe 827 kB/s |  27 kB     00:00    
+Dependencies resolved.
+
+[ .OUTPUT TRIMMED. ]
+
+Installed:
+  apr-1.7.5-3.el10.x86_64                                                       
+  apr-util-1.6.3-23.el10_2.1.x86_64                                             
+  apr-util-lmdb-1.6.3-23.el10_2.1.x86_64                                        
+  apr-util-openssl-1.6.3-23.el10_2.1.x86_64                                     
+  httpd-2.4.63-13.el10_2.8.x86_64                                               
+  httpd-core-2.4.63-13.el10_2.8.x86_64                                          
+  httpd-filesystem-2.4.63-13.el10_2.8.noarch                                    
+  httpd-tools-2.4.63-13.el10_2.8.x86_64                                         
+  libbrotli-1.1.0-8.el10_2.1.x86_64                                             
+  lmdb-libs-0.9.32-4.el10.x86_64                                                
+  mailcap-2.1.54-8.el10.noarch                                                  
+  mod_http2-2.0.29-5.el10_3.1.x86_64                                            
+  mod_lua-2.4.63-13.el10_2.8.x86_64                                             
+  redhat-logos-httpd-100.3-2.el10.noarch                                        
+
+Complete!
+Updating Subscription Management repositories.
+subscription-manager is operating in container mode.
+30 files removed
+Apache installed and cache clean
+--> be61016fe9c3
+STEP 3/4: EXPOSE 80
+--> 21c776d0868f
+STEP 4/4: CMD ["/usr/sbin/httpd","-DFOREGROUND"]
+COMMIT my-webserver
+--> 740e05b7d4e1
+Successfully tagged localhost/my-webserver:latest
+740e05b7d4e175b780ff49d9358c76142a26c5b89dfff5ab1e12f936f8b96b7d
+----
+
+Notice the build didn't use the cached install layer.
+This is something to keep in mind as you design your `Containerfiles`.
+Where changes are made and how often will impact your build times.
+
+So did putting both commands in one layer change the size?
+
+[source,bash,role=execute]
+----
+podman images my-webserver
+----
+
+[source,text]
+----
+REPOSITORY              TAG         IMAGE ID      CREATED             SIZE
+localhost/my-webserver  latest      740e05b7d4e1  About a minute ago  249 MB
+----
+
+Barely, and that's the point worth understanding here. There wasn't much cache to reclaim because the UBI base only pulls from a few small repositories. But because the cleanup ran in the *same* layer as the install, whatever cache existed never became part of the committed image. With a larger install or bigger repositories attached, that same technique can save hundreds of megabytes.
+
+Let's take a closer look at the layer ordering and how we can use some other commands in the `Containerfile` to customize it further.
